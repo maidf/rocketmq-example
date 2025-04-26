@@ -1,0 +1,106 @@
+
+
+services:
+  namesrv:
+    image: apache/rocketmq:5.3.2
+    container_name: rmqnamesrv
+    networks:
+      - rocketmq
+    command: sh mqnamesrv
+    environment:
+      - TZ=Asia/Shanghai
+
+  namesrv2:
+    image: apache/rocketmq:5.3.2
+    container_name: rmqnamesrv2
+    networks:
+      - rocketmq
+    command: sh mqnamesrv
+    environment:
+      - TZ=Asia/Shanghai
+
+  broker:
+    image: apache/rocketmq:5.3.2
+    container_name: rmqbroker
+    environment:
+      - NAMESRV_ADDR=rmqnamesrv:9876;rmqnamesrv2:9876
+      - JAVA_OPTS=-Xmx1024m -Xms1024m
+      - TZ=Asia/Shanghai
+    depends_on:
+      - namesrv
+    networks:
+      - rocketmq
+    volumes:
+      - ./conf/dledger/broker-n0.conf:/home/rocketmq/broker-n0.conf
+    command: sh mqbroker -c /home/rocketmq/broker-n0.conf
+
+  broker1:
+    image: apache/rocketmq:5.3.2
+    container_name: rmqbroker1
+    environment:
+      - NAMESRV_ADDR=rmqnamesrv:9876;rmqnamesrv2:9876
+      - JAVA_OPTS=-Xmx1024m -Xms1024m
+      - TZ=Asia/Shanghai
+    depends_on:
+      - namesrv
+    networks:
+      - rocketmq
+    volumes:
+      - ./conf/dledger/broker-n1.conf:/home/rocketmq/broker-n1.conf
+    command: sh mqbroker -c /home/rocketmq/broker-n1.conf
+
+
+  broker2:
+    image: apache/rocketmq:5.3.2
+    container_name: rmqbroker2
+    environment:
+      - NAMESRV_ADDR=rmqnamesrv:9876;rmqnamesrv2:9876
+      - JAVA_OPTS=-Xmx1024m -Xms1024m
+      - TZ=Asia/Shanghai
+    depends_on:
+      - namesrv
+    networks:
+      - rocketmq
+    volumes:
+      - ./conf/dledger/broker-n2.conf:/home/rocketmq/broker-n2.conf
+    command: sh mqbroker -c /home/rocketmq/broker-n2.conf
+
+    
+  proxy:
+    image: apache/rocketmq:5.3.2
+    container_name: rmqproxy
+    networks:
+      - rocketmq
+    depends_on:
+      - broker
+      - namesrv
+    ports:
+      - 8080:8080
+      - 8081:8081
+    restart: on-failure
+    environment:
+      - NAMESRV_ADDR=rmqnamesrv:9876;rmqnamesrv2:9876
+      - TZ=Asia/Shanghai
+    volumes:
+      - ./conf/dledger/broker-n0.conf:/home/rocketmq/broker-n0.conf
+      - ./conf/dledger/broker-n1.conf:/home/rocketmq/broker-n1.conf
+      - ./conf/dledger/broker-n2.conf:/home/rocketmq/broker-n2.conf
+    command: sh mqproxy
+  
+  dashboard:
+    image: apacherocketmq/rocketmq-dashboard:latest
+    container_name: rmqdashboard
+    networks:
+      - rocketmq
+    depends_on:
+      - namesrv
+    ports:
+      - 9992:8080
+    restart: on-failure
+    environment:
+      - NAMESRV_ADDR=rmqnamesrv:9876;rmqnamesrv2:9876
+      - TZ=Asia/Shanghai
+      - JAVA_OPTS=-Drocketmq.namesrv.addr=rmqnamesrv:9876;rmqnamesrv2:9876 -Xmx512m -Xms512m
+networks:
+  rocketmq:
+    driver: bridge

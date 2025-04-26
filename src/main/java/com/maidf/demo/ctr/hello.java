@@ -17,7 +17,8 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @RestController
-public class hello {
+public class Hello {
+
 
     @GetMapping("hello/{msg}")
     public String sayHello(@PathVariable String msg) {
@@ -26,16 +27,15 @@ public class hello {
 
     @GetMapping("send/{msg}")
     public String sendMsg(@PathVariable String msg) throws ClientException, IOException {
-        String endpoint = "localhost:8081";
+        String endpoint = "localhost:8080";
         // 需要提前创建topic
         String topic = "TestTopic";
-        String topic2 = "topic1";
         ClientServiceProvider provider = ClientServiceProvider.loadService();
         ClientConfigurationBuilder builder = ClientConfiguration.newBuilder().setEndpoints(endpoint);
         ClientConfiguration configuration = builder.build();
         // 初始化Producer时需要设置通信配置以及预绑定的Topic。
         Producer producer = provider.newProducerBuilder()
-                .setTopics(topic, topic2)
+                .setTopics(topic)
                 .setClientConfiguration(configuration)
                 .build();
 
